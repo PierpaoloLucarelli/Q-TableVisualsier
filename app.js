@@ -1,6 +1,6 @@
-var W = 5;
-var H = 5;
-var scale = 120;
+var W = 10;
+var H = 3;
+var scale = 80;
 
 function Game(){
 	this.c = document.getElementById("myCanvas");
@@ -11,10 +11,12 @@ function Game(){
 
 	this.hells = [
 		[2,2],
-		[1,2]
+		[3,0],
+		[5,2],
+		[7,2],
 	];
 
-	this.goal = [2,3];
+	this.goal = [6,2];
 
 	this.build_env = function(qt){
 
@@ -22,6 +24,38 @@ function Game(){
 		ctx.rect(0, 0, W*scale, H*scale);
 		ctx.fillStyle = "black";
 		ctx.fill();
+		for(var i = 0 ; i < H ; i++){
+			for(var j = 0 ; j < W ; j++){
+				ctx.beginPath();
+				ctx.moveTo(j*scale,i*scale);	
+				ctx.lineTo(j*scale+scale,i*scale);
+				ctx.lineTo(j*scale+scale/2,i*scale+scale/2);
+				var color = this.getHeat(qt[i*W+j][0]);
+				ctx.fillStyle = color;
+				ctx.fill();
+				ctx.beginPath();
+				ctx.moveTo(j*scale,i*scale);	
+				ctx.lineTo(j*scale,i*scale+scale);
+				ctx.lineTo(j*scale+scale/2,i*scale+scale/2);
+				var color = this.getHeat(qt[i*W+j][3]);
+				ctx.fillStyle = color;
+				ctx.fill();
+				ctx.beginPath();
+				ctx.moveTo(j*scale+scale,i*scale+scale);	
+				ctx.lineTo(j*scale,i*scale+scale);
+				ctx.lineTo(j*scale+scale/2,i*scale+scale/2);
+				var color = this.getHeat(qt[i*W+j][2]);
+				ctx.fillStyle = color;
+				ctx.fill();
+				ctx.beginPath();
+				ctx.moveTo(j*scale+scale,i*scale+scale);	
+				ctx.lineTo(j*scale+scale,i*scale);
+				ctx.lineTo(j*scale+scale/2,i*scale+scale/2);
+				var color = this.getHeat(qt[i*W+j][1]);
+				ctx.fillStyle = color;
+				ctx.fill();
+			}
+		}
 		// hells
 		ctx.beginPath();
 		for(var i = 0 ; i < this.hells.length ; i++){
@@ -51,6 +85,7 @@ function Game(){
 			ctx.moveTo(0,i*scale);	
 			ctx.lineTo(W*scale,i*scale);
 		}
+
 		for(var i = 0 ; i < W ; i++){
 			for(var j = 0 ; j < H ; j++){
 				ctx.moveTo(i*scale,j*scale);	
@@ -63,18 +98,31 @@ function Game(){
 		ctx.stroke();
 
 		// q-values
-		ctx.font = "10px Arial";
+		ctx.font = "8px Arial";
 		ctx.fillStyle = "#FFFFFF";
-		for(var i = 0 ; i < W ; i++){
-			for(var j = 0 ; j < H ; j++){
+		for(var i = 0 ; i < H ; i++){
+			for(var j = 0 ; j < W ; j++){
 				for(var q = 0 ; q < qt[0].length ; q++){
-					ctx.fillText(qt[i*W+j][0], (i%W)*scale+scale/2-3, j*scale+scale/4+3);
-					ctx.fillText(qt[i*W+j][1], (i%W)*scale+scale/4*3-3, j*scale+scale/2+3);
-					ctx.fillText(qt[i*W+j][2], (i%W)*scale+scale/2-3, j*scale+scale/4*3+3);
-					ctx.fillText(qt[i*W+j][3], (i%W)*scale+scale/4-3, j*scale+scale/2+3);
+					ctx.fillText(qt[i*W+j][0], (j%W)*scale+scale/2-3, i*scale+scale/4+3);
+					ctx.fillText(qt[i*W+j][1], (j%W)*scale+scale/4*3-3, i*scale+scale/2+3);
+					ctx.fillText(qt[i*W+j][2], (j%W)*scale+scale/2-3, i*scale+scale/4*3+3);
+					ctx.fillText(qt[i*W+j][3], (j%W)*scale+scale/4-3, i*scale+scale/2+3);
 				}
 			}
 		}
+	}
+
+	this.getHeat = function(val){
+		// console.log(val);
+		var color = "rgb(";
+		if(val >= 0){
+			var g = val / 1 * 255;
+			color +=  "0," + Math.round(g) + ",0)";
+		} else {
+			var r = val / 1 * 255;
+			color += Math.round(r)*-1 + ",0,0)";
+		}
+		return color;
 	}
 
 	this.step = function(action){
@@ -144,8 +192,8 @@ function QLearner(gamma, lr){
 	this.qtable = this.zeros([W*H,4]);
 
 	this.learn = function(s,r,a,s_){
-		var i = s[0] * W + s[1];
-		var i_ = s_[0] * W + s_[1];
+		var i = s[1] * W + s[0];
+		var i_ = s_[1] * W + s_[0];
 		var q_predict = this.qtable[i][a];
 		if(!r.done)
 			q_target = r.r + this.gamma * Math.max(...this.qtable[i_]);
